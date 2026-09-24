@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - Healthcare System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">🏥 Healthcare System</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="patient-booking.html" class="active">Book Appointment</a></li>
+            <li><a href="doctor-dashboard.html">Doctor Dashboard</a></li>
+            <li><a href="prescriptions.html">Prescriptions</a></li>
+            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Patient Appointment Booking</h1>
+            <p>Schedule a consultation with our medical specialists.</p>
+        </div>
+
+        <!-- Alert messages -->
+        <div id="bookingAlert" class="alert"></div>
+
+        <div class="grid-2">
+            <!-- Booking Form -->
+            <div class="card">
+                <h2>Book New Appointment</h2>
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label for="patientSelect">Select Patient</label>
+                        <select id="patientSelect" class="form-control" required>
+                            <option value="">-- Choose Patient --</option>
+                        </select>
+                        <small style="color: var(--text-muted); display: block; margin-top: 4px;">
+                            Need to register a new patient? Go to <a href="admin-dashboard.html">Admin Dashboard</a>.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="doctorSelect">Select Doctor</label>
+                        <select id="doctorSelect" class="form-control" required>
+                            <option value="">-- Choose Doctor --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appointmentDate">Appointment Date</label>
+                        <input type="date" id="appointmentDate" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timeSlot">Time Slot</label>
+                        <select id="timeSlot" class="form-control" required>
+                            <option value="">-- Choose Time Slot --</option>
+                            <option value="09:00 AM">09:00 AM - 09:30 AM</option>
+                            <option value="10:00 AM">10:00 AM - 10:30 AM</option>
+                            <option value="11:00 AM">11:00 AM - 11:30 AM</option>
+                            <option value="02:00 PM">02:00 PM - 02:30 PM</option>
+                            <option value="03:00 PM">03:00 PM - 03:30 PM</option>
+                            <option value="04:00 PM">04:00 PM - 04:30 PM</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Confirm Appointment</button>
+                </form>
+            </div>
+
+            <!-- Guidelines / Tips -->
+            <div class="card">
+                <h2>Booking Information</h2>
+                <div style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.8;">
+                    <p>✔ <strong>Unique Slot Verification:</strong> Our backend prevents double-booking. If another
+                        patient has already booked the doctor for the same time slot, a conflict warning will appear.
+                    </p>
+                    <p>✔ <strong>Initial Status:</strong> All newly submitted bookings are marked as
+                        <code>PENDING</code> until confirmed by the doctor.</p>
+                    <p>✔ <strong>Cancellation:</strong> You can cancel any scheduled appointment below at any time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>All Booked Appointments</h2>
+                <button id="refreshBtn" class="btn btn-secondary btn-sm">↻ Refresh List</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Doctor</th>
+                            <th>Specialization</th>
+                            <th>Patient ID</th>
+                            <th>Date</th>
+                            <th>Time Slot</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appointmentsTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted);">Loading
+                                appointments...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        © 2026 SmartCare Healthcare System. All rights reserved. | Secure Patient Care & Clinical Services
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Set minimum date to today
+        const dateInput = document.getElementById('appointmentDate');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+
+        // Load Doctors and Patients for Dropdowns
+        async function loadInitialData() {
+            try {
+                // Fetch Doctors
+                const doctors = await apiRequest('/api/doctors');
+                const doctorSelect = document.getElementById('doctorSelect');
+                doctorSelect.innerHTML = '<option value="">-- Choose Doctor --</option>';
+                doctors.forEach(doc => {
+                    const docName = doc.user ? doc.user.name : ('Doctor #' + doc.id);
+                    const opt = document.createElement('option');
+                    opt.value = doc.id;
+                    opt.textContent = `${docName} (${doc.specialization || 'General'})`;
+                    doctorSelect.appendChild(opt);
+                });
+
+                // Fetch Patients
+                const patients = await apiRequest('/api/patients');
+                const patientSelect = document.getElementById('patientSelect');
+                patientSelect.innerHTML = '<option value="">-- Choose Patient --</option>';
+                patients.forEach(p => {
+                    const patName = p.user ? p.user.name : ('Patient #' + p.id);
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${patName} (Contact: ${p.contactNumber || 'N/A'})`;
+                    patientSelect.appendChild(opt);
+                });
+
+                // If no doctors or patients exist, show helpful hint
+                if (doctors.length === 0 || patients.length === 0) {
+                    showAlert('bookingAlert', 'Tip: Please register at least one Doctor and Patient in the Admin Dashboard first.', 'info');
+                }
+            } catch (err) {
+                showAlert('bookingAlert', 'Could not load doctors/patients: ' + err.message, 'danger');
+            }
+        }
+
+        // Load Appointments Table
+        async function loadAppointments() {
+            const tbody = document.getElementById('appointmentsTableBody');
+            try {
+                const appointments = await apiRequest('/api/appointments');
+                tbody.innerHTML = '';
+
+                if (appointments.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No appointments found.</td></tr>';
+                    return;
+                }
+
+                appointments.forEach(apt => {
+                    const docName = apt.doctor && apt.doctor.user ? apt.doctor.user.name : (apt.doctor ? 'Doctor #' + apt.doctor.id : 'N/A');
+                    const spec = apt.doctor ? (apt.doctor.specialization || 'General') : 'N/A';
+                    const patId = apt.patient ? apt.patient.id : 'N/A';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${apt.id}</td>
+                        <td><strong>${docName}</strong></td>
+                        <td>${spec}</td>
+                        <td>Patient #${patId}</td>
+                        <td>${apt.appointmentDate}</td>
+                        <td>${apt.timeSlot}</td>
+                        <td>${getStatusBadge(apt.status)}</td>
+                        <td>
+                            ${apt.status !== 'CANCELLED' ?
+                            `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${apt.id})">Cancel</button>`
+                            : '<span style="color: var(--text-muted); font-size: 0.85rem;">Cancelled</span>'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger); text-align: center;">Error loading appointments: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Handle Booking Form Submit
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert('bookingAlert');
+
+            const doctorId = document.getElementById('doctorSelect').value;
+            const patientId = document.getElementById('patientSelect').value;
+            const appointmentDate = document.getElementById('appointmentDate').value;
+            const timeSlot = document.getElementById('timeSlot').value;
+
+            // Proper JSON body with existing entity IDs (Prevents TransientPropertyValueException)
+            const payload = {
+                doctor: { id: parseInt(doctorId) },
+                patient: { id: parseInt(patientId) },
+                appointmentDate: appointmentDate,
+                timeSlot: timeSlot
+            };
+
+            try {
+                await apiRequest('/api/appointments', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                showAlert('bookingAlert', 'Appointment successfully booked with status PENDING!', 'success');
+                document.getElementById('bookingForm').reset();
+                loadAppointments();
+            } catch (err) {
+                showAlert('bookingAlert', err.message, 'danger');
+            }
+        });
+
+        // Cancel Appointment Function
+        async function cancelAppointment(id) {
+            if (!confirm(`Are you sure you want to cancel appointment #${id}?`)) return;
+
+            try {
+                await apiRequest(`/api/appointments/${id}`, {
+                    method: 'DELETE'
+                });
+                showAlert('bookingAlert', `Appointment #${id} has been cancelled.`, 'info');
+                loadAppointments();
+            } catch (err) {
+                showAlert('bookingAlert', 'Failed to cancel appointment: ' + err.message, 'danger');
+            }
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', loadAppointments);
+
+        // Initial Page Load
+        loadInitialData();
+        loadAppointments();
+    </script>
+</body>
+
+</html>

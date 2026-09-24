@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Prescriptions - Healthcare System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">🏥 Healthcare System</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="patient-booking.html">Book Appointment</a></li>
+            <li><a href="doctor-dashboard.html">Doctor Dashboard</a></li>
+            <li><a href="prescriptions.html" class="active">Prescriptions</a></li>
+            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Digital Prescription Management</h1>
+            <p>Generate digital prescriptions, assign clinical instructions, and add medication details with atomic
+                transaction handling.</p>
+        </div>
+
+        <div id="rxAlert" class="alert"></div>
+
+        <!-- Quick Search by Prescription ID -->
+        <div class="card" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label for="searchRxId" style="font-weight: 600; display: block; margin-bottom: 0.35rem;">Retrieve
+                    Existing Prescription by ID:</label>
+                <input type="number" id="searchRxId" class="form-control" placeholder="Enter Prescription ID (e.g. 1)">
+            </div>
+            <button id="searchRxBtn" class="btn btn-secondary">🔍 Search Prescription</button>
+        </div>
+
+        <div class="grid-2">
+
+            <!-- Complete Appointment & Issue Prescription Form (Transactional) -->
+            <div class="card">
+                <h2>1. Complete Appointment &amp; Issue Prescription</h2>
+                <div
+                    style="background: var(--primary-light); padding: 0.6rem 0.8rem; border-radius: var(--radius); font-size: 0.85rem; color: var(--primary-dark); margin-bottom: 1rem;">
+                    ⚡ <strong>Atomic Transaction:</strong> Creates prescription, saves all medicines, and updates
+                    appointment status to <code>COMPLETED</code> in a single database transaction. If any step fails,
+                    all changes roll back!
+                </div>
+
+                <form id="completeAptForm">
+                    <div class="form-group">
+                        <label for="appointmentId">Appointment ID</label>
+                        <input type="number" id="appointmentId" class="form-control" placeholder="e.g. 1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diagnosis">Medical Diagnosis</label>
+                        <input type="text" id="diagnosis" class="form-control"
+                            placeholder="e.g. Acute Bronchitis, Hypertension" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instructions">Doctor's Instructions &amp; Advice</label>
+                        <textarea id="instructions" class="form-control" rows="2"
+                            placeholder="e.g. Drink warm fluids, avoid cold weather, take meds after food"
+                            required></textarea>
+                    </div>
+
+                    <!-- Medicines list inside form -->
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.75rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="font-weight: 600; font-size: 0.9rem;">Prescribed Medicines</label>
+                            <button type="button" id="addMedRowBtn" class="btn btn-secondary btn-sm">+ Add Medicine
+                                Row</button>
+                        </div>
+                        <div id="medicinesContainer">
+                            <!-- Default Row -->
+                            <div class="med-row"
+                                style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+                                <input type="text" class="form-control med-name"
+                                    placeholder="Medicine Name (e.g. Amoxicillin)" required style="flex: 2;">
+                                <input type="text" class="form-control med-dosage" placeholder="Dosage (500mg)" required
+                                    style="flex: 1.5;">
+                                <input type="text" class="form-control med-duration" placeholder="Duration (5 Days)"
+                                    required style="flex: 1.5;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        ⚡ Complete Appointment &amp; Issue Prescription
+                    </button>
+                </form>
+            </div>
+
+            <!-- Append Extra Medicine Form -->
+            <div class="card">
+                <h2>2. Append Medicine to Existing Prescription</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Need to add another medication to an already existing prescription? Use this quick form.
+                </p>
+                <form id="addMedicineForm">
+                    <div class="form-group">
+                        <label for="targetRxId">Prescription ID</label>
+                        <input type="number" id="targetRxId" class="form-control"
+                            placeholder="Enter existing Prescription ID" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extraMedName">Medicine Name</label>
+                        <input type="text" id="extraMedName" class="form-control" placeholder="e.g. Paracetamol"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extraDosage">Dosage</label>
+                        <input type="text" id="extraDosage" class="form-control" placeholder="e.g. 500mg (Twice daily)"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extraDuration">Duration</label>
+                        <input type="text" id="extraDuration" class="form-control" placeholder="e.g. 3 Days" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary" style="width: 100%;">+ Append Medicine</button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- Prescription Details Display Card -->
+        <div id="rxResultCard" class="card" style="display: none;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                <h2 style="border: none; margin: 0; color: var(--primary);">📋 Prescription Record #<span
+                        id="displayRxId"></span></h2>
+                <button class="btn btn-sm btn-secondary" onclick="window.print()">🖨️ Print / Save PDF</button>
+            </div>
+
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Appointment ID
+                    </p>
+                    <p style="font-size: 1.1rem; font-weight: 600;">#<span id="displayAptId"></span> <span
+                            class="badge badge-completed">COMPLETED</span></p>
+                </div>
+                <div>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Diagnosis</p>
+                    <p id="displayDiagnosis" style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);"></p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <p style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Clinical
+                    Instructions</p>
+                <div id="displayInstructions"
+                    style="background: var(--bg-main); padding: 0.8rem; border-radius: var(--radius); border-left: 4px solid var(--primary); margin-top: 0.3rem;">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem;">Prescribed Medications</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Medicine Name</th>
+                            <th>Dosage</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="displayMedicinesBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted);">No medications added
+                                yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        © 2026 SmartCare Healthcare System. All rights reserved. | Secure Patient Care & Clinical Services
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Check if appointmentId parameter was passed from doctor dashboard
+        const urlParams = new URLSearchParams(window.location.search);
+        const passedAptId = urlParams.get('appointmentId');
+        if (passedAptId) {
+            document.getElementById('appointmentId').value = passedAptId;
+        }
+
+        // Add dynamic medicine row
+        document.getElementById('addMedRowBtn').addEventListener('click', () => {
+            const container = document.getElementById('medicinesContainer');
+            const row = document.createElement('div');
+            row.className = 'med-row';
+            row.style.cssText = 'display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;';
+            row.innerHTML = `
+                <input type="text" class="form-control med-name" placeholder="Medicine Name" required style="flex: 2;">
+                <input type="text" class="form-control med-dosage" placeholder="Dosage" required style="flex: 1.5;">
+                <input type="text" class="form-control med-duration" placeholder="Duration" required style="flex: 1.5;">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" style="padding: 0.4rem 0.6rem;">✕</button>
+            `;
+            container.appendChild(row);
+        });
+
+        // Submit Atomic Transaction (Complete Appointment & Issue Prescription)
+        document.getElementById('completeAptForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert('rxAlert');
+
+            const aptId = document.getElementById('appointmentId').value;
+            const diagnosis = document.getElementById('diagnosis').value;
+            const instructions = document.getElementById('instructions').value;
+
+            // Collect medicines
+            const rows = document.querySelectorAll('#medicinesContainer .med-row');
+            const medicines = [];
+            rows.forEach(r => {
+                const name = r.querySelector('.med-name').value.trim();
+                const dosage = r.querySelector('.med-dosage').value.trim();
+                const duration = r.querySelector('.med-duration').value.trim();
+                if (name) {
+                    medicines.push({ medicineName: name, dosage: dosage, duration: duration });
+                }
+            });
+
+            const payload = {
+                appointmentId: parseInt(aptId),
+                diagnosis: diagnosis,
+                instructions: instructions,
+                medicines: medicines
+            };
+
+            try {
+                const savedRx = await apiRequest('/api/prescriptions/complete', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                showAlert('rxAlert', `Success! Appointment #${aptId} marked as COMPLETED and Prescription #${savedRx.id} issued atomically.`, 'success');
+                document.getElementById('targetRxId').value = savedRx.id;
+                fetchAndDisplayPrescription(savedRx.id);
+            } catch (err) {
+                showAlert('rxAlert', 'Transaction Failed & Rolled Back: ' + err.message, 'danger');
+            }
+        });
+
+        // Append Extra Medicine
+        document.getElementById('addMedicineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert('rxAlert');
+
+            const rxId = document.getElementById('targetRxId').value;
+            const medName = document.getElementById('extraMedName').value;
+            const dosage = document.getElementById('extraDosage').value;
+            const duration = document.getElementById('extraDuration').value;
+
+            const payload = {
+                medicineName: medName,
+                dosage: dosage,
+                duration: duration
+            };
+
+            try {
+                await apiRequest(`/api/prescriptions/${rxId}/medicines`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                showAlert('rxAlert', `Medicine "${medName}" appended to Prescription #${rxId}!`, 'success');
+                document.getElementById('extraMedName').value = '';
+                document.getElementById('extraDosage').value = '';
+                document.getElementById('extraDuration').value = '';
+
+                fetchAndDisplayPrescription(rxId);
+            } catch (err) {
+                showAlert('rxAlert', 'Failed to append medicine: ' + err.message, 'danger');
+            }
+        });
+
+        // Search Prescription by ID
+        document.getElementById('searchRxBtn').addEventListener('click', () => {
+            const rxId = document.getElementById('searchRxId').value;
+            if (!rxId) {
+                showAlert('rxAlert', 'Please enter a Prescription ID to search.', 'danger');
+                return;
+            }
+            fetchAndDisplayPrescription(rxId);
+        });
+
+        // Fetch & Render Prescription Card
+        async function fetchAndDisplayPrescription(id) {
+            hideAlert('rxAlert');
+            const resultCard = document.getElementById('rxResultCard');
+            const medsBody = document.getElementById('displayMedicinesBody');
+
+            try {
+                const rx = await apiRequest(`/api/prescriptions/${id}`);
+
+                resultCard.style.display = 'block';
+                document.getElementById('displayRxId').textContent = rx.id;
+                document.getElementById('displayAptId').textContent = rx.appointment ? rx.appointment.id : 'N/A';
+                document.getElementById('displayDiagnosis').textContent = rx.diagnosis;
+                document.getElementById('displayInstructions').textContent = rx.instructions;
+                document.getElementById('targetRxId').value = rx.id;
+
+                // Render medicines
+                medsBody.innerHTML = '';
+                if (rx.medicines && rx.medicines.length > 0) {
+                    rx.medicines.forEach((med, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td><strong>${med.medicineName}</strong></td>
+                            <td>${med.dosage}</td>
+                            <td>${med.duration}</td>
+                        `;
+                        medsBody.appendChild(tr);
+                    });
+                } else {
+                    medsBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No medications added to this prescription yet.</td></tr>';
+                }
+
+                resultCard.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                resultCard.style.display = 'none';
+                showAlert('rxAlert', `Prescription #${id} not found or could not be loaded: ${err.message}`, 'danger');
+            }
+        }
+    </script>
+</body>
+
+</html>

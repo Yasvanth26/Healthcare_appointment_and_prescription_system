@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Appointment & Prescription System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">🏥 Healthcare System</a>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="patient-booking.html">Book Appointment</a></li>
+            <li><a href="doctor-dashboard.html">Doctor Dashboard</a></li>
+            <li><a href="prescriptions.html">Prescriptions</a></li>
+            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+
+        <div class="page-header" style="text-align: center; margin: 2rem 0;">
+            <h1>Healthcare Appointment & Prescription System</h1>
+            <p>Centralized platform for patient consultations, doctor scheduling, and digital prescriptions.
+            </p>
+
+            <div id="systemStatus"
+                style="margin-top: 1rem; display: inline-block; padding: 0.4rem 1rem; border-radius: 50px; background: #e8f5e9; color: #2e7d32; font-weight: 500; font-size: 0.9rem;">
+                ● Checking backend connectivity...
+            </div>
+        </div>
+
+        <!-- Role Access Cards -->
+        <div class="grid-2">
+
+            <div class="role-card">
+                <div>
+                    <div class="role-icon">🧑‍⚕️</div>
+                    <h3>Patient Portal</h3>
+                    <p>Select your doctor, pick an available date and time slot, book appointments, and track your
+                        booking status.</p>
+                </div>
+                <a href="patient-booking.html" class="btn btn-primary">Book an Appointment</a>
+            </div>
+
+            <div class="role-card">
+                <div>
+                    <div class="role-icon">🩺</div>
+                    <h3>Doctor Dashboard</h3>
+                    <p>View your scheduled patients, confirm or complete appointments, and generate digital
+                        prescriptions.</p>
+                </div>
+                <a href="doctor-dashboard.html" class="btn btn-secondary">Open Doctor Dashboard</a>
+            </div>
+
+            <div class="role-card">
+                <div>
+                    <div class="role-icon">💊</div>
+                    <h3>Digital Prescriptions</h3>
+                    <p>Access prescriptions by ID, view diagnoses, instructions, and add medication details with dosage
+                        and duration.</p>
+                </div>
+                <a href="prescriptions.html" class="btn btn-primary" style="background-color: #5c6bc0;">View
+                    Prescriptions</a>
+            </div>
+
+            <div class="role-card">
+                <div>
+                    <div class="role-icon">⚙️</div>
+                    <h3>Admin Management</h3>
+                    <p>Register new doctors and patients, monitor overall appointment volume, and oversee entire system
+                        operations.</p>
+                </div>
+                <a href="admin-dashboard.html" class="btn btn-primary" style="background-color: #455a64;">Open Admin
+                    Dashboard</a>
+            </div>
+
+        </div>
+
+        <!-- Architecture Flow -->
+        <div class="card" style="margin-top: 2rem;">
+            <h3>Clinic Guidelines & Information</h3>
+            <div style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.8;">
+                <p><strong>1. Instant Slot Confirmation:</strong> Real-time scheduling prevents duplicate bookings and
+                    updates doctor availability immediately.</p>
+                <p><strong>2. Paperless Prescriptions:</strong> Doctors issue secure digital prescriptions directly to
+                    patient profiles upon consultation completion.</p>
+                <p><strong>3. Role-Based Access:</strong> Dedicated interfaces for patients, medical staff, and
+                    administrators to ensure patient data privacy.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        @ 2026 SmartCare Healthcare System. All rights reserved. | Secure Patient Care & Clinical Services
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Check backend health on load
+        async function checkBackend() {
+            const statusBadge = document.getElementById('systemStatus');
+            try {
+                const response = await fetch('/api/test');
+                if (response.ok) {
+                    const message = await response.text();
+                    statusBadge.style.background = '#e8f5e9';
+                    statusBadge.style.color = '#2e7d32';
+                    statusBadge.innerHTML = '● ' + message;
+                } else {
+                    throw new Error('Status ' + response.status);
+                }
+            } catch (err) {
+                statusBadge.style.background = '#ffebee';
+                statusBadge.style.color = '#d32f2f';
+                statusBadge.innerHTML = '● Backend Offline (Ensure Spring Boot is running on port 8080)';
+            }
+        }
+        checkBackend();
+    </script>
+</body>
+
+</html>

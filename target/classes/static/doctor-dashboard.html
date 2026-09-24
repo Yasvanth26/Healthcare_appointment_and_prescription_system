@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Healthcare System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">🏥 Healthcare System</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="patient-booking.html">Book Appointment</a></li>
+            <li><a href="doctor-dashboard.html" class="active">Doctor Dashboard</a></li>
+            <li><a href="prescriptions.html">Prescriptions</a></li>
+            <li><a href="admin-dashboard.html">Admin Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Doctor Appointment Dashboard</h1>
+            <p>Manage patient visits, update appointment status, and issue prescriptions.</p>
+        </div>
+
+        <div id="doctorAlert" class="alert"></div>
+
+        <!-- Filter Controls & Doctor Selector -->
+        <div class="card"
+            style="display: flex; gap: 1.5rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+                <label for="doctorFilter" style="font-weight: 600; display: block; margin-bottom: 0.35rem;">Filter by
+                    Doctor:</label>
+                <select id="doctorFilter" class="form-control">
+                    <option value="ALL">-- Show All Doctors --</option>
+                </select>
+            </div>
+            <div>
+                <button id="refreshBtn" class="btn btn-secondary">↻ Refresh Appointments</button>
+            </div>
+        </div>
+
+        <!-- Quick Summary Stats -->
+        <div class="grid-3" style="margin-bottom: 1.5rem;">
+            <div class="stat-box">
+                <div id="totalCount" class="stat-num">0</div>
+                <div class="stat-label">Total Assigned</div>
+            </div>
+            <div class="stat-box">
+                <div id="pendingCount" class="stat-num" style="color: var(--warning);">0</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+            <div class="stat-box">
+                <div id="confirmedCount" class="stat-num" style="color: var(--primary);">0</div>
+                <div class="stat-label">Confirmed / Scheduled</div>
+            </div>
+        </div>
+
+        <!-- Appointments Management Table -->
+        <div class="card">
+            <h2>Patient Appointment Queue</h2>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Apt #</th>
+                            <th>Doctor</th>
+                            <th>Patient ID</th>
+                            <th>Date</th>
+                            <th>Slot</th>
+                            <th>Status</th>
+                            <th>Update Status</th>
+                            <th>Prescription</th>
+                        </tr>
+                    </thead>
+                    <tbody id="doctorTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted);">Loading schedule...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        © 2026 SmartCare Healthcare System. All rights reserved. | Secure Patient Care & Clinical Services
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        let allAppointments = [];
+
+        // Load Doctor List for filter
+        async function loadDoctorList() {
+            try {
+                const doctors = await apiRequest('/api/doctors');
+                const filter = document.getElementById('doctorFilter');
+                filter.innerHTML = '<option value="ALL">-- Show All Doctors --</option>';
+
+                doctors.forEach(doc => {
+                    const name = doc.user ? doc.user.name : ('Doctor #' + doc.id);
+                    const opt = document.createElement('option');
+                    opt.value = doc.id;
+                    opt.textContent = `${name} (${doc.specialization || 'General'})`;
+                    filter.appendChild(opt);
+                });
+            } catch (err) {
+                showAlert('doctorAlert', 'Failed loading doctor list: ' + err.message, 'danger');
+            }
+        }
+
+        // Load Appointments
+        async function fetchAppointments() {
+            const tbody = document.getElementById('doctorTableBody');
+            try {
+                allAppointments = await apiRequest('/api/appointments');
+                renderAppointmentsTable();
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger); text-align: center;">Error: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Render Table based on selected filter
+        function renderAppointmentsTable() {
+            const tbody = document.getElementById('doctorTableBody');
+            const selectedDoctor = document.getElementById('doctorFilter').value;
+
+            let filtered = allAppointments;
+            if (selectedDoctor !== 'ALL') {
+                filtered = allAppointments.filter(a => a.doctor && a.doctor.id === parseInt(selectedDoctor));
+            }
+
+            // Update stats
+            document.getElementById('totalCount').textContent = filtered.length;
+            document.getElementById('pendingCount').textContent = filtered.filter(a => a.status === 'PENDING').length;
+            document.getElementById('confirmedCount').textContent = filtered.filter(a => a.status === 'CONFIRMED').length;
+
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No appointments found for this selection.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(apt => {
+                const docName = apt.doctor && apt.doctor.user ? apt.doctor.user.name : (apt.doctor ? 'Doctor #' + apt.doctor.id : 'N/A');
+                const patId = apt.patient ? apt.patient.id : 'N/A';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${apt.id}</td>
+                    <td><strong>${docName}</strong></td>
+                    <td>Patient #${patId}</td>
+                    <td>${apt.appointmentDate}</td>
+                    <td>${apt.timeSlot}</td>
+                    <td>${getStatusBadge(apt.status)}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                            ${apt.status === 'PENDING' ? `
+                                <button class="btn btn-primary btn-sm" onclick="changeStatus(${apt.id}, 'CONFIRMED')">Confirm</button>
+                            ` : ''}
+                            ${apt.status === 'CONFIRMED' ? `
+                                <button class="btn btn-secondary btn-sm" onclick="changeStatus(${apt.id}, 'COMPLETED')">Complete</button>
+                            ` : ''}
+                            ${apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' ? `
+                                <button class="btn btn-danger btn-sm" onclick="cancelAppointment(${apt.id})">Cancel</button>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <a href="prescriptions.html?appointmentId=${apt.id}" class="btn btn-sm btn-primary" style="background-color: #5c6bc0;">
+                            ✍ Rx Prescribe
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Change Appointment Status
+        async function changeStatus(id, newStatus) {
+            hideAlert('doctorAlert');
+            try {
+                await apiRequest(`/api/appointments/${id}/status`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                showAlert('doctorAlert', `Appointment #${id} updated to ${newStatus}!`, 'success');
+                await fetchAppointments();
+            } catch (err) {
+                showAlert('doctorAlert', 'Failed updating status: ' + err.message, 'danger');
+            }
+        }
+
+        // Cancel Appointment
+        async function cancelAppointment(id) {
+            if (!confirm(`Are you sure you want to cancel appointment #${id}?`)) return;
+            hideAlert('doctorAlert');
+
+            try {
+                await apiRequest(`/api/appointments/${id}`, {
+                    method: 'DELETE'
+                });
+                showAlert('doctorAlert', `Appointment #${id} has been cancelled.`, 'info');
+                await fetchAppointments();
+            } catch (err) {
+                showAlert('doctorAlert', 'Failed to cancel appointment: ' + err.message, 'danger');
+            }
+        }
+
+        document.getElementById('doctorFilter').addEventListener('change', renderAppointmentsTable);
+        document.getElementById('refreshBtn').addEventListener('click', fetchAppointments);
+
+        loadDoctorList();
+        fetchAppointments();
+    </script>
+</body>
+
+</html>
