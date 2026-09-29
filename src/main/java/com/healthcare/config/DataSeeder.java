@@ -27,6 +27,11 @@ public class DataSeeder implements CommandLineRunner {
     private PatientRepository patientRepository;
 
     @Autowired
+
+    private AppointmentRepository appointmentRepository;
+    
+    @Autowired
+    
     private AppointmentService appointmentService;
 
     @Autowired
@@ -34,7 +39,7 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (doctorRepository.count() == 0) {
+        if (UserRepository.count() == 0) {
             seedData();
         }
     }
