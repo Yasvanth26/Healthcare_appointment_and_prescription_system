@@ -18,7 +18,7 @@ public class Prescription {
     private String diagnosis;
     private String instructions;
 
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<PrescriptionMedicine> medicines;
 
     public Prescription() {
