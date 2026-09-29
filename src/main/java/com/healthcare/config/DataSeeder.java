@@ -39,7 +39,7 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (UserRepository.count() == 0) {
+        if (doctorRepository.count() == 0) {
             seedData();
         }
     }
