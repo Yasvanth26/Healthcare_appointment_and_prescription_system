@@ -33,6 +33,7 @@ public class PrescriptionService {
     }
 
     // Retrieve a prescription by ID
+     @Transactional
     public Prescription getPrescriptionById(Long id) {
         return prescriptionRepository.findById(id).orElse(null);
     }
